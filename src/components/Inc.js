@@ -3,7 +3,7 @@
  */
 import React, { Component } from 'react';
 
-class Inc extends React.Component {
+class Inc extends Component {
     render() {
         const { gp, incs } = this.props;
         // log(IncsByGroup)

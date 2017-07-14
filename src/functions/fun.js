@@ -1,14 +1,27 @@
 /**
  * Created by Ark on 7/13/2017.
  */
-import {always, compose, cond, equals, head, map, match, reduceBy, tail, test, trim,T} from "ramda";
+import {always, compose, cond, equals, head, map, match, reduceBy, tail, test, trim,T, curry} from "ramda";
 const eq = equals;
 const al = always;
-// const headMatch = compose(head,match)
-
-const headMatch = x=>str=> compose(head, match(x))(str)?compose(head, match(x))(str):'Others';
-const IncRgx = /INC.*JOBFAILURE[^:]*:[^:]*|INC.*MAXRUNALARM[^:]*:[^:]*|INC.+com\s/g;
+const headMatch = x => compose(head,match(x));
+const supFun = curry((f, x) => f(x)?f(x):x);
+const safeheadMatch = x=>str=> headMatch(x)(str)?headMatch(x)(str):'Others';
+const IncRgx = /INC.*(JOBFAILURE|MAXRUNALARM)[^:]*:[^:]*|INC.+com\s/g;
 const GrpRgx = /\w+~[a-zA-Z~]*\t|CRT~GLBL~\w+/g;
+const reAlert =[
+    headMatch(/\w.*(JOBFAILURE|MAXRUNALARM|MINRUNALARM|CHASE)[^:]*:[^:]*/gi),
+    headMatch(/(.*\n)*.*?(?=\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:)/g),
+    headMatch(/.*/g),
+];
+const ckAlert = reAlert => x => {
+    let i = 0;
+    while(!reAlert[i](x)) {
+        i++;
+    }
+    return reAlert[i](x);
+};
+console.log(ckAlert(reAlert)(`INC0048386495	P00 - JOBFAILURE : bbeowulf_c_credit_ccar_bond_run_curvedelta_bat_ldn9 : Job has failed : Job status is now set to FAILURE.	7/12/17 10:33:17 PM	7/12/17 10:33:17 PM	1	A	PRODUCTION	BEOWULF	slgpsm020002309	AUTOSYS	Geetha Elumalai	Open	2	101233359`));
 const regroup = cond([
     [test(/RNA~GLBL~CREDITANDSP~SUPPORT/g), al("IT_RnA_Credit_SP_L1_L2_Comms")],
     [
@@ -23,7 +36,7 @@ const regroup = cond([
 ]);
 
 const cidToGroup = cond([
-    [test(/cen.*|cta.*|cte.*/ig), al("IT_AETT_Credit_L1_L2_Comms")],
+    [test(/cen.*|ta.*|cte.*/ig), al("IT_AETT_Credit_L1_L2_Comms")],
     [test(/bfr.*|tig.*|fpg.*|fxq.*|lro.*|bbe.*|rff.+beowulf.*|rff.+congo.+ro.*/ig),al("IT_RnA_Commodities_and_FX_L1_Shared_Escalation")],
     [test(/exl.*|erc.*|fsp.*|rff.*|exn.*|emh.*|osr.*|eor.*|ext.*|exu.*|emx.*|ffe.*|esn.*|VRC.*|mex.*|PCG.*/ig),al("IT_RnA_FI_Rates_L1_Shared_Escalation")],
     [test(/spy.*|tso.*|tac.*|tra.*/ig), al("IT_TPE_Core_L1_L2_Comms")],
@@ -39,13 +52,13 @@ const cidToGroup = cond([
 // const strRp = compose(console.log,replace(/_/g,'.*'),replace(/_,\s/g,'.*|'));
 // strRp('TSP_, rrv_')
 const mgr = x => {console.log(x); return x;};
-const exCid = headMatch(/\w+/g);
+const exCid = safeheadMatch(/\w+/g);
 const exCidMapGroup = compose(mgr,cidToGroup,trim,exCid);
-const exGrp = x =>exCidMapGroup(x)?exCidMapGroup(x):compose(mgr,regroup,trim,headMatch(GrpRgx))(x);
+const exGrp = x =>exCidMapGroup(x)?exCidMapGroup(x):compose(mgr,regroup,trim,safeheadMatch(GrpRgx))(x);
 
 // const headMatch = x => compose(head, match(x));
 const resObj = str => ({
-    id: headMatch(IncRgx)(str),
+    id: safeheadMatch(IncRgx)(str),
     gp: exGrp(str),
     cId: exCid(str)
 });

@@ -13,6 +13,7 @@ const reAlert =[
     headMatch(/\w.*(JOBFAILURE|MAXRUNALARM|MINRUNALARM|CHASE)[^:]*:[^:]*/gi),
     headMatch(/(.*\n)*.*?(?=\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:)/g),
     headMatch(/.*/g),
+    x=>x,
 ];
 const ckAlert = reAlert => x => {
     let i = 0;
@@ -63,7 +64,16 @@ const resObj = str => ({
     cId: exCid(str)
 });
 const InitialFilter = /(.*\n+){7}.*?(?=\d{1,2}\/).*(\n|$)|\w.+(\n|$)/g;
-const chkMultiInc = x => match(/\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:\d{2}:\d{2}/g,x).length>2?match(/w.+(\n|$)/,x):x;
+const chkMultiInc = x => match(/\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:\d{2}:\d{2}/g,x).length>2?match(/\w.+(\n|$)/,x):x;
+// const chkMultiInc = x => match(/\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:\d{2}:\d{2}/g,x).length>2;
+console.log('hey',chkMultiInc(`RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342
+RVRPT		EM Process Monitor Alert: Process Monitoring - 'FudoServer-ldn-batches.exe' breached threshold: The process 'FudoServer-ldn-batches.exe' has breached '=0' threshold. Actual running:0	ldnpsm020009774	7/14/17 6:18:20 AM	7/14/17 6:37:42 AM	6	D	PRODUCTION	BARCLAYS LIVE RATES	WIN_PROCESS_ISSUE	Nobody	Open	1	101925342`))
 const testHeading = compose(test(/ComponentId/ig),head);
 const ckHeading = x => testHeading(x)?tail(x):x;
 const inClean = compose(
@@ -73,6 +83,7 @@ const inClean = compose(
     map(trim),
     mgr,
     flatten,
+    mgr,
     map(chkMultiInc),
     mgr,
     match(InitialFilter)

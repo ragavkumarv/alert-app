@@ -1,7 +1,7 @@
 /**
  * Created by Ark on 7/13/2017.
  */
-import {always, compose, cond, equals, head, map, match, reduceBy, tail, test, trim,T, curry} from "ramda";
+import {always, compose, cond, equals, head, map, match, reduceBy, tail, test, trim,T, curry,replace,flatten} from "ramda";
 const eq = equals;
 const al = always;
 const headMatch = x => compose(head,match(x));
@@ -21,7 +21,7 @@ const ckAlert = reAlert => x => {
     }
     return reAlert[i](x);
 };
-console.log(ckAlert(reAlert)(`INC0048386495	P00 - JOBFAILURE : bbeowulf_c_credit_ccar_bond_run_curvedelta_bat_ldn9 : Job has failed : Job status is now set to FAILURE.	7/12/17 10:33:17 PM	7/12/17 10:33:17 PM	1	A	PRODUCTION	BEOWULF	slgpsm020002309	AUTOSYS	Geetha Elumalai	Open	2	101233359`));
+// console.log(ckAlert(reAlert)(`INC0048386495	P00 - JOBFAILURE : bbeowulf_c_credit_ccar_bond_run_curvedelta_bat_ldn9 : Job has failed : Job status is now set to FAILURE.	7/12/17 10:33:17 PM	7/12/17 10:33:17 PM	1	A	PRODUCTION	BEOWULF	slgpsm020002309	AUTOSYS	Geetha Elumalai	Open	2	101233359`));
 const regroup = cond([
     [test(/RNA~GLBL~CREDITANDSP~SUPPORT/g), al("IT_RnA_Credit_SP_L1_L2_Comms")],
     [
@@ -36,33 +36,34 @@ const regroup = cond([
 ]);
 
 const cidToGroup = cond([
-    [test(/cen.*|ta.*|cte.*/ig), al("IT_AETT_Credit_L1_L2_Comms")],
-    [test(/bfr.*|tig.*|fpg.*|fxq.*|lro.*|bbe.*|rff.+beowulf.*|rff.+congo.+ro.*/ig),al("IT_RnA_Commodities_and_FX_L1_Shared_Escalation")],
-    [test(/exl.*|erc.*|fsp.*|rff.*|exn.*|emh.*|osr.*|eor.*|ext.*|exu.*|emx.*|ffe.*|esn.*|VRC.*|mex.*|PCG.*/ig),al("IT_RnA_FI_Rates_L1_Shared_Escalation")],
-    [test(/spy.*|tso.*|tac.*|tra.*/ig), al("IT_TPE_Core_L1_L2_Comms")],
-    [test(/sws_*/ig), al("IT_TPE_Credit_L1_L2_Comms")],
-    [test(/dfx.*|bts.*|tcl.*|mfx.*/ig), al("IT_TPE_Macro_L1_L2_Comms")],
-    [test(/min*/ig), al("IT_TPE_Rates_L1_L2_Comms")],
-    [test(/sum.*|plt.*|ste.*/ig), al("IT_TPE_Summit_L1_L2_Comms")],
-    [test(/flm*/ig), al("RnAPLMSSupport")],
-    [test(/utr.*|ras.*|ice.*/ig), al("T_FI_AMSC_TCG_Events")],
-    [test(/TSP.*|rrv.*/ig), al("RTB Research Analytics")],
+    [test(/cen|ta|cte/ig), al("IT_AETT_Credit_L1_L2_Comms")],
+    [test(/bfr|tig|fpg|fxq|lro|bbe|rff.+beowulf|rff.+congo.+ro/ig),al("IT_RnA_Commodities_and_FX_L1_Shared_Escalation")],
+    [test(/FIELN|exl|erc|fsp|rff|exn|emh|osr|eor|ext|exu|emx|ffe|esn|VRC|mex|PCG/ig),al("IT_RnA_FI_Rates_L1_Shared_Escalation")],
+    [test(/spy|tso|tac|tra/ig), al("IT_TPE_Core_L1_L2_Comms")],
+    [test(/sws/ig), al("IT_TPE_Credit_L1_L2_Comms")],
+    [test(/dfx|bts|tcl|mfx/ig), al("IT_TPE_Macro_L1_L2_Comms")],
+    [test(/min/ig), al("IT_TPE_Rates_L1_L2_Comms")],
+    [test(/sum|plt|ste/ig), al("IT_TPE_Summit_L1_L2_Comms")],
+    [test(/flm/ig), al("RnAPLMSSupport")],
+    [test(/utr|ras|ice/ig), al("T_FI_AMSC_TCG_Events")],
+    [test(/TSP|rrv|RVRPT/ig), al("RTB Research Analytics")],
     [T, x => false]
 ]);
 // const strRp = compose(console.log,replace(/_/g,'.*'),replace(/_,\s/g,'.*|'));
 // strRp('TSP_, rrv_')
-const mgr = x => {console.log(x); return x;};
+const mgr = x => {console.log('hiiii',x); return x;};
 const exCid = safeheadMatch(/\w+/g);
-const exCidMapGroup = compose(mgr,cidToGroup,trim,exCid);
-const exGrp = x =>exCidMapGroup(x)?exCidMapGroup(x):compose(mgr,regroup,trim,safeheadMatch(GrpRgx))(x);
+const exCidMapGroup = compose(cidToGroup,trim,exCid);
+const exGrp = x =>exCidMapGroup(x)?exCidMapGroup(x):compose(regroup,trim,safeheadMatch(GrpRgx))(x);
 
 // const headMatch = x => compose(head, match(x));
 const resObj = str => ({
-    id: safeheadMatch(IncRgx)(str),
+    id: compose(ckAlert(reAlert),replace(/\w+\s/, ''))(str),
     gp: exGrp(str),
     cId: exCid(str)
 });
-
+const InitialFilter = /(.*\n+){7}.*?(?=\d{1,2}\/).*(\n|$)|\w.+(\n|$)/g;
+const chkMultiInc = x => match(/\d{1,2}\/\d{1,2}\/\d{1,2}\s\d{1,2}:\d{2}:\d{2}/g,x).length>2?match(/w.+(\n|$)/,x):x;
 const testHeading = compose(test(/ComponentId/ig),head);
 const ckHeading = x => testHeading(x)?tail(x):x;
 const inClean = compose(
@@ -70,7 +71,11 @@ const inClean = compose(
     ckHeading,
     map(mgr),
     map(trim),
-    match(/\w.+\n/g)
+    mgr,
+    flatten,
+    map(chkMultiInc),
+    mgr,
+    match(InitialFilter)
 );
 
 /*inClean(`
@@ -82,3 +87,4 @@ const reduceToIdBy = reduceBy((acc, inc) => [...acc, inc.id], []);
 const incsByGroup = reduceToIdBy(alertGp => regroup(alertGp.gp));
 // const printKeyConcatValue = (value, key) => {console.log(key,'\n'); map(console.log)(value); console.log('\n')}
 export  {inClean,incsByGroup};
+// (\w.+\n+)*.*\d{1,2}\/\d{1,2}\/\d{1,2}\s
